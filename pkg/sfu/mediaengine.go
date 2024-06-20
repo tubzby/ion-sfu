@@ -16,6 +16,13 @@ func getPublisherMediaEngine() (*webrtc.MediaEngine, error) {
 		return nil, err
 	}
 
+	if err := me.RegisterCodec(webrtc.RTPCodecParameters{
+		RTPCodecCapability: webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypePCMU, ClockRate: 8000, Channels: 1, SDPFmtpLine: "", RTCPFeedback: nil},
+		PayloadType:        0,
+	}, webrtc.RTPCodecTypeAudio); err != nil {
+		return nil, err
+	}
+
 	videoRTCPFeedback := []webrtc.RTCPFeedback{
 		{Type: webrtc.TypeRTCPFBGoogREMB, Parameter: ""},
 		{Type: webrtc.TypeRTCPFBCCM, Parameter: "fir"},
