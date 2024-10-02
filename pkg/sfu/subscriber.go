@@ -308,7 +308,16 @@ func (s *Subscriber) sendStreamDownTracksReports(streamID string) {
 	go func() {
 		r := r
 		i := 0
+		start := time.Now()
 		for {
+			if time.Since(start) >= time.Duration(10*time.Second) {
+				return
+			}
+
+			if s.pc.ConnectionState() != webrtc.PeerConnectionStateConnected {
+				time.Sleep(40 * time.Millisecond)
+				continue
+			}
 			if err := s.pc.WriteRTCP(r); err != nil {
 				Logger.Error(err, "Sending track binding reports err")
 			}
