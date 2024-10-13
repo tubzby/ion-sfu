@@ -343,10 +343,21 @@ func (w *WebRTCReceiver) writeRTP(layer int) {
 		&rtcp.PictureLossIndication{SenderSSRC: rand.Uint32(), MediaSSRC: w.SSRC(layer)},
 	}
 
+	ssrc := w.SSRC(layer)
+	Logger.Info("writeRTP start", "mediaSSRC", ssrc)
+
+	defer func() {
+		Logger.Info("writeRTP end", "mediaSSRC", ssrc)
+	}()
+
 	for {
 		pkt, err := w.buffers[layer].ReadExtended()
 		if err == io.EOF {
 			return
+		}
+
+		if pkt.KeyFrame {
+			Logger.Info("got keyframe", "mediaSSRC", ssrc)
 		}
 
 		if w.isSimulcast {
