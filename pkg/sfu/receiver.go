@@ -31,6 +31,7 @@ type Receiver interface {
 	RetransmitPackets(track *DownTrack, packets []packetMeta) error
 	DeleteDownTrack(layer int, id string)
 	OnCloseHandler(fn func())
+	OnExtPktHandler(layer int, fn func(*buffer.ExtPacket))
 	SendRTCP(p []rtcp.Packet)
 	SetRTCPCh(ch chan []rtcp.Packet)
 	GetSenderReportTime(layer int) (rtpTS uint32, ntpTS uint64)
@@ -41,27 +42,28 @@ type WebRTCReceiver struct {
 	sync.Mutex
 	closeOnce sync.Once
 
-	peerID         string
-	trackID        string
-	streamID       string
-	kind           webrtc.RTPCodecType
-	closed         atomicBool
-	bandwidth      uint64
-	lastPli        int64
-	stream         string
-	receiver       *webrtc.RTPReceiver
-	codec          webrtc.RTPCodecParameters
-	rtcpCh         chan []rtcp.Packet
-	buffers        [3]*buffer.Buffer
-	upTracks       [3]*webrtc.TrackRemote
-	stats          [3]*stats.Stream
-	available      [3]atomicBool
-	downTracks     [3]atomic.Value // []*DownTrack
-	pending        [3]atomicBool
-	pendingTracks  [3][]*DownTrack
-	nackWorker     *workerpool.WorkerPool
-	isSimulcast    bool
-	onCloseHandler func()
+	peerID          string
+	trackID         string
+	streamID        string
+	kind            webrtc.RTPCodecType
+	closed          atomicBool
+	bandwidth       uint64
+	lastPli         int64
+	stream          string
+	receiver        *webrtc.RTPReceiver
+	codec           webrtc.RTPCodecParameters
+	rtcpCh          chan []rtcp.Packet
+	buffers         [3]*buffer.Buffer
+	upTracks        [3]*webrtc.TrackRemote
+	stats           [3]*stats.Stream
+	available       [3]atomicBool
+	downTracks      [3]atomic.Value // []*DownTrack
+	pending         [3]atomicBool
+	pendingTracks   [3][]*DownTrack
+	nackWorker      *workerpool.WorkerPool
+	isSimulcast     bool
+	onCloseHandler  func()
+	onExtPktHandler [3]func(*buffer.ExtPacket)
 }
 
 // NewWebRTCReceiver creates a new webrtc track receivers
@@ -238,6 +240,11 @@ func (w *WebRTCReceiver) OnCloseHandler(fn func()) {
 	w.onCloseHandler = fn
 }
 
+// OnExtPktHandler method to be called on each rtp packet
+func (w *WebRTCReceiver) OnExtPktHandler(layer int, fn func(*buffer.ExtPacket)) {
+	w.onExtPktHandler[layer] = fn
+}
+
 // DeleteDownTrack removes a DownTrack from a Receiver
 func (w *WebRTCReceiver) DeleteDownTrack(layer int, id string) {
 	if w.closed.get() {
@@ -388,6 +395,9 @@ func (w *WebRTCReceiver) writeRTP(layer int) {
 				}
 				Logger.Error(err, "Error writing to down track", "id", dt.id)
 			}
+		}
+		if w.onExtPktHandler[layer] != nil {
+			w.onExtPktHandler[layer](pkt)
 		}
 	}
 
