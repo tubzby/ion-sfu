@@ -15,6 +15,14 @@ const (
 	subscriber = 1
 )
 
+type StreamType uint8
+
+const (
+	Full StreamType = iota
+	Half
+	Quarter
+)
+
 var (
 	// ErrTransportExists join is called after a peerconnection is established
 	ErrTransportExists = errors.New("rtc transport already exists for this connection")
@@ -44,6 +52,10 @@ type JoinConfig struct {
 	// to customize the subscrbe stream combination as needed.
 	// this parameter depends on NoSubscribe=false.
 	NoAutoSubscribe bool
+	// Can join a particular stream type
+	StreamType StreamType
+	// SFU mode or P2P mode
+	SFU bool
 }
 
 // SessionProvider provides the SessionLocal to the sfu.Peer
