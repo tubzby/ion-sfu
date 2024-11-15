@@ -363,10 +363,6 @@ func (w *WebRTCReceiver) writeRTP(layer int) {
 			return
 		}
 
-		if pkt.KeyFrame {
-			Logger.Info("got keyframe", "mediaSSRC", ssrc)
-		}
-
 		if w.isSimulcast {
 			if w.pending[layer].get() {
 				if pkt.KeyFrame {
