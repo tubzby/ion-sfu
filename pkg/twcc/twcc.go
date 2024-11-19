@@ -119,7 +119,8 @@ func (t *Responder) buildTransportCCPacket() rtcp.RawPacket {
 	maxStatus := rtcp.TypeTCCPacketNotReceived
 
 	var statusList deque.Deque[uint16]
-	statusList.SetMinCapacity(3)
+	// 2^3
+	statusList.SetBaseCap(8)
 
 	for _, stat := range tccPkts {
 		status := rtcp.TypeTCCPacketNotReceived

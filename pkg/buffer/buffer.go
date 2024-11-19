@@ -118,7 +118,8 @@ func NewBuffer(ssrc uint32, vp, ap *sync.Pool, logger logr.Logger) *Buffer {
 		audioPool: ap,
 		logger:    logger,
 	}
-	b.extPackets.SetMinCapacity(7)
+	// 2^7
+	b.extPackets.SetBaseCap(128)
 	return b
 }
 
