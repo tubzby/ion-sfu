@@ -4,6 +4,8 @@ go 1.22.7
 
 toolchain go1.23.3
 
+replace github.com/pion/webrtc/v3 v3.3.4 => github.com/tubzby/webrtc/v3 v3.3.4-h265
+
 require (
 	github.com/bep/debounce v1.2.1
 	github.com/gammazero/deque v1.0.0
