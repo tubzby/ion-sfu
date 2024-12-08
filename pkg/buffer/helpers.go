@@ -209,3 +209,26 @@ func isH264Keyframe(payload []byte) bool {
 	}
 	return false
 }
+
+// isH265Keyframe detects if h265 payload is a keyframe
+func isH265Keyframe(payload []byte) bool {
+	if len(payload) < 1 {
+		return false
+	}
+	nalu := (payload[0] >> 1) & 0x3F
+	// IDR
+	if nalu == 19 {
+		return true
+	}
+
+	// FU
+	if nalu != 49 {
+		return false
+	}
+
+	if len(payload) < 3 {
+		return false
+	}
+	nalu = payload[2] & 0x3f
+	return nalu == 19
+}

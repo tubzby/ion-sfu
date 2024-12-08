@@ -337,6 +337,8 @@ func (b *Buffer) calc(pkt []byte, arrivalTime int64) {
 		ep.KeyFrame = vp8Packet.IsKeyFrame
 	case "video/h264":
 		ep.KeyFrame = isH264Keyframe(p.Payload)
+	case "video/h265":
+		ep.KeyFrame = isH265Keyframe(p.Payload)
 	}
 
 	if b.minPacketProbe < 25 {
