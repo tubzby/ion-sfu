@@ -230,5 +230,5 @@ func isH265Keyframe(payload []byte) bool {
 		return false
 	}
 	nalu = payload[2] & 0x3f
-	return nalu == 19
+	return nalu == 19 || nalu == 20
 }
