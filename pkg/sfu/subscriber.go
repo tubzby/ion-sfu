@@ -8,7 +8,7 @@ import (
 
 	"github.com/bep/debounce"
 	"github.com/pion/rtcp"
-	"github.com/pion/webrtc/v3"
+	"github.com/pion/webrtc/v4"
 )
 
 const APIChannelLabel = "ion-sfu"

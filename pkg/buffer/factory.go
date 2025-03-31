@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/go-logr/logr"
-	"github.com/pion/transport/v2/packetio"
+	"github.com/pion/transport/v3/packetio"
 )
 
 type Factory struct {

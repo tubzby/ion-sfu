@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/pion/ion-sfu/pkg/buffer"
-	"github.com/pion/webrtc/v3"
+	"github.com/pion/webrtc/v4"
 )
 
 var (

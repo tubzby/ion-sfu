@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/pion/ion-sfu/pkg/sfu"
-	"github.com/pion/webrtc/v3"
+	"github.com/pion/webrtc/v4"
 )
 
 const (

@@ -8,7 +8,7 @@ import (
 	"github.com/pion/ion-sfu/pkg/stats"
 	"github.com/pion/ion-sfu/pkg/twcc"
 	"github.com/pion/rtcp"
-	"github.com/pion/webrtc/v3"
+	"github.com/pion/webrtc/v4"
 )
 
 // Router defines a track rtp/rtcp Router

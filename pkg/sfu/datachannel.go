@@ -3,7 +3,7 @@ package sfu
 import (
 	"context"
 
-	"github.com/pion/webrtc/v3"
+	"github.com/pion/webrtc/v4"
 )
 
 type (

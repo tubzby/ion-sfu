@@ -9,8 +9,8 @@ import (
 
 	"github.com/pion/ion-sfu/pkg/buffer"
 	"github.com/pion/rtcp"
-	"github.com/pion/transport/v2/packetio"
-	"github.com/pion/webrtc/v3"
+	"github.com/pion/transport/v3/packetio"
+	"github.com/pion/webrtc/v4"
 )
 
 // DownTrackType determines the type of track

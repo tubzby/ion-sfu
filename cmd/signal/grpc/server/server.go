@@ -11,7 +11,7 @@ import (
 	log "github.com/pion/ion-log"
 	"github.com/pion/ion-sfu/pkg/sfu"
 	rtc "github.com/pion/ion/proto/rtc"
-	"github.com/pion/webrtc/v3"
+	"github.com/pion/webrtc/v4"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

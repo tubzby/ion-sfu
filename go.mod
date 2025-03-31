@@ -4,8 +4,6 @@ go 1.22.7
 
 toolchain go1.23.3
 
-replace github.com/pion/webrtc/v3 v3.3.4 => github.com/tubzby/webrtc/v3 v3.3.4-h265
-
 require (
 	github.com/bep/debounce v1.2.1
 	github.com/gammazero/deque v1.0.0
@@ -17,23 +15,23 @@ require (
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/lucsky/cuid v1.2.1
 	github.com/pion/dtls/v2 v2.2.12
-	github.com/pion/ice/v2 v2.3.37
+	github.com/pion/ice/v4 v4.0.9
 	github.com/pion/ion v1.10.0
 	github.com/pion/ion-log v1.2.2
-	github.com/pion/logging v0.2.2
-	github.com/pion/rtcp v1.2.14
-	github.com/pion/rtp v1.8.7
-	github.com/pion/sdp/v3 v3.0.9
-	github.com/pion/transport/v2 v2.2.10
+	github.com/pion/logging v0.2.3
+	github.com/pion/rtcp v1.2.15
+	github.com/pion/rtp v1.8.13
+	github.com/pion/sdp/v3 v3.0.11
+	github.com/pion/transport/v3 v3.0.7
 	github.com/pion/turn/v2 v2.1.6
-	github.com/pion/webrtc/v3 v3.3.4
+	github.com/pion/webrtc/v4 v4.0.14
 	github.com/prometheus/client_golang v1.20.5
 	github.com/rs/zerolog v1.33.0
 	github.com/soheilhy/cmux v0.1.5
 	github.com/sourcegraph/jsonrpc2 v0.2.0
 	github.com/spf13/viper v1.19.0
-	github.com/stretchr/testify v1.9.0
-	golang.org/x/sync v0.9.0
+	github.com/stretchr/testify v1.10.0
+	golang.org/x/sync v0.11.0
 	google.golang.org/grpc v1.68.0
 )
 
@@ -55,13 +53,17 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
-	github.com/pion/datachannel v1.5.9 // indirect
-	github.com/pion/interceptor v0.1.29 // indirect
-	github.com/pion/mdns v0.0.12 // indirect
+	github.com/pion/datachannel v1.5.10 // indirect
+	github.com/pion/dtls/v3 v3.0.4 // indirect
+	github.com/pion/interceptor v0.1.37 // indirect
+	github.com/pion/mdns/v2 v2.0.7 // indirect
 	github.com/pion/randutil v0.1.0 // indirect
-	github.com/pion/sctp v1.8.33 // indirect
-	github.com/pion/srtp/v2 v2.0.20 // indirect
+	github.com/pion/sctp v1.8.37 // indirect
+	github.com/pion/srtp/v3 v3.0.4 // indirect
 	github.com/pion/stun v0.6.1 // indirect
+	github.com/pion/stun/v3 v3.0.0 // indirect
+	github.com/pion/transport/v2 v2.2.4 // indirect
+	github.com/pion/turn/v4 v4.0.0 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.60.1 // indirect
@@ -77,12 +79,12 @@ require (
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/wlynxg/anet v0.0.5 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/crypto v0.29.0 // indirect
+	golang.org/x/crypto v0.33.0 // indirect
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0 // indirect
-	golang.org/x/net v0.31.0 // indirect
-	golang.org/x/sys v0.27.0 // indirect
-	golang.org/x/term v0.26.0 // indirect
-	golang.org/x/text v0.20.0 // indirect
+	golang.org/x/net v0.35.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/term v0.29.0 // indirect
+	golang.org/x/text v0.22.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241118233622-e639e219e697 // indirect
 	google.golang.org/protobuf v1.35.2 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
