@@ -87,6 +87,7 @@ type SFU struct {
 func NewWebRTCTransportConfig(c Config) WebRTCTransportConfig {
 	se := webrtc.SettingEngine{}
 	se.DisableMediaEngineCopy(true)
+	se.EnableSCTPZeroChecksum(true)
 
 	if c.WebRTC.ICESinglePort != 0 {
 		Logger.Info("Listen on ", "single-port", c.WebRTC.ICESinglePort)
