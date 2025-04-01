@@ -363,6 +363,10 @@ func (w *WebRTCReceiver) writeRTP(layer int) {
 			return
 		}
 
+		// https://github.com/pion/webrtc/wiki/Release-WebRTC@v4.0.0
+		pkt.Packet.Extension = false
+		pkt.Packet.Extensions = nil
+
 		if w.isSimulcast {
 			if w.pending[layer].get() {
 				if pkt.KeyFrame {
