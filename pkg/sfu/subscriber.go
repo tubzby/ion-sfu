@@ -2,6 +2,7 @@ package sfu
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"sync"
 	"time"
@@ -28,6 +29,9 @@ type Subscriber struct {
 	closeOnce sync.Once
 
 	noAutoSubscribe bool
+
+	ctx       context.Context
+	ctxCancel context.CancelFunc
 }
 
 // NewSubscriber creates a new Subscriber
@@ -45,6 +49,7 @@ func NewSubscriber(id string, cfg WebRTCTransportConfig) (*Subscriber, error) {
 		return nil, errPeerConnectionInitFailed
 	}
 
+	ctx, ctxCancel := context.WithCancel(context.Background())
 	s := &Subscriber{
 		id:              id,
 		me:              me,
@@ -52,6 +57,8 @@ func NewSubscriber(id string, cfg WebRTCTransportConfig) (*Subscriber, error) {
 		tracks:          make(map[string][]*DownTrack),
 		channels:        make(map[string]*webrtc.DataChannel),
 		noAutoSubscribe: false,
+		ctx:             ctx,
+		ctxCancel:       ctxCancel,
 	}
 
 	pc.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
@@ -62,16 +69,16 @@ func NewSubscriber(id string, cfg WebRTCTransportConfig) (*Subscriber, error) {
 		case webrtc.ICEConnectionStateFailed:
 			fallthrough
 		case webrtc.ICEConnectionStateClosed:
-			s.closeOnce.Do(func() {
-				Logger.V(1).Info("webrtc ice closed", "peer_id", s.id)
+			Logger.V(1).Info("webrtc ice closed", "peer_id", s.id)
+			go func() {
 				if err := s.Close(); err != nil {
 					Logger.Error(err, "webrtc transport close err")
 				}
-			})
+			}()
 		}
 	})
 
-	go s.downTracksReports()
+	go s.downTracksReports(s.ctx)
 
 	return s, nil
 }
@@ -109,13 +116,22 @@ func (s *Subscriber) DataChannel(label string) *webrtc.DataChannel {
 }
 
 func (s *Subscriber) OnNegotiationNeeded(f func()) {
+	if f == nil {
+		s.negotiate = func() {}
+		return
+	}
 	debounced := debounce.New(250 * time.Millisecond)
 	s.negotiate = func() {
-		debounced(f)
+		debounced(func() {
+			f()
+		})
 	}
 }
 
 func (s *Subscriber) CreateOffer() (webrtc.SessionDescription, error) {
+	if s.pc == nil {
+		return webrtc.SessionDescription{}, fmt.Errorf("peer connection closed")
+	}
 	offer, err := s.pc.CreateOffer(nil)
 	if err != nil {
 		return webrtc.SessionDescription{}, err
@@ -131,6 +147,9 @@ func (s *Subscriber) CreateOffer() (webrtc.SessionDescription, error) {
 
 // OnICECandidate handler
 func (s *Subscriber) OnICECandidate(f func(c *webrtc.ICECandidate)) {
+	if s.pc == nil {
+		return
+	}
 	s.pc.OnICECandidate(f)
 }
 
@@ -238,18 +257,56 @@ func (s *Subscriber) GetDownTracks(streamID string) []*DownTrack {
 
 // Negotiate fires a debounced negotiation request
 func (s *Subscriber) Negotiate() {
-	s.negotiate()
+	if s.negotiate != nil {
+		s.negotiate()
+	}
 }
 
 // Close peer
 func (s *Subscriber) Close() error {
-	return s.pc.Close()
+	s.closeOnce.Do(func() {
+		s.ctxCancel() // Cancel the context to stop background goroutines first
+
+		pc := s.pc
+
+		for _, dt := range s.DownTracks() {
+			dt.Close()
+		}
+
+		// Break cycle: Subscriber -> DataChannel -> OnMessage -> PeerLocal -> Subscriber
+		s.Lock()
+		for _, dc := range s.channels {
+			dc.OnMessage(nil)
+		}
+		s.Unlock()
+
+		s.negotiate = func() {}
+
+		if pc != nil {
+			if err := pc.GracefulClose(); err != nil {
+				Logger.Error(err, "Subscriber.Close pc.GracefulClose error", "peer_id", s.id)
+			}
+		}
+	})
+
+	return nil
 }
 
-func (s *Subscriber) downTracksReports() {
-	for {
-		time.Sleep(5 * time.Second)
+func (s *Subscriber) downTracksReports(ctx context.Context) { // Changed signature
+	ticker := time.NewTicker(5 * time.Second) // Use a ticker for periodic checks
+	defer ticker.Stop()
 
+	for {
+		select { // Added select
+		case <-ctx.Done(): // Added context check
+			return
+		case <-ticker.C: // Wait for the ticker or context cancellation
+			// Continue with the reporting logic
+		}
+
+		if s.pc == nil { // Added nil check
+			return
+		}
 		if s.pc.ConnectionState() == webrtc.PeerConnectionStateClosed {
 			return
 		}
@@ -290,7 +347,7 @@ func (s *Subscriber) downTracksReports() {
 	}
 }
 
-func (s *Subscriber) sendStreamDownTracksReports(streamID string) {
+func (s *Subscriber) sendStreamDownTracksReports(ctx context.Context, streamID string) {
 	var r []rtcp.Packet
 	var sd []rtcp.SourceDescriptionChunk
 
@@ -312,10 +369,19 @@ func (s *Subscriber) sendStreamDownTracksReports(streamID string) {
 		i := 0
 		start := time.Now()
 		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
+
 			if time.Since(start) >= time.Duration(10*time.Second) {
 				return
 			}
 
+			if s.pc == nil { // Added nil check
+				return
+			}
 			if s.pc.ConnectionState() != webrtc.PeerConnectionStateConnected {
 				time.Sleep(40 * time.Millisecond)
 				continue

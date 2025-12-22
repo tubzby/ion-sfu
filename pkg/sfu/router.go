@@ -281,7 +281,7 @@ func (r *router) AddDownTrack(sub *Subscriber, recv Receiver) (*DownTrack, error
 	})
 
 	downTrack.OnBind(func() {
-		go sub.sendStreamDownTracksReports(recv.StreamID())
+		go sub.sendStreamDownTracksReports(sub.ctx, recv.StreamID())
 	})
 
 	sub.AddDownTrack(recv.StreamID(), downTrack)

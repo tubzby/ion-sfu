@@ -58,6 +58,7 @@ type DownTrack struct {
 	receiver       Receiver
 	transceiver    *webrtc.RTPTransceiver
 	writeStream    webrtc.TrackLocalWriter
+	rtcpReader     *buffer.RTCPReader
 	onCloseHandler func()
 	onBind         func()
 	closeOnce      sync.Once
@@ -94,6 +95,7 @@ func (d *DownTrack) Bind(t webrtc.TrackLocalContext) (webrtc.RTPCodecParameters,
 		d.reSync.set(true)
 		d.enabled.set(true)
 		if rr := d.bufferFactory.GetOrNew(packetio.RTCPBufferPacket, uint32(t.SSRC())).(*buffer.RTCPReader); rr != nil {
+			d.rtcpReader = rr
 			rr.OnPacket(func(pkt []byte) {
 				d.handleRTCP(pkt)
 			})
@@ -189,6 +191,14 @@ func (d *DownTrack) Close() {
 		Logger.V(1).Info("Closing sender", "peer_id", d.peerID)
 		if d.payload != nil {
 			packetFactory.Put(d.payload)
+		}
+		if d.rtcpReader != nil {
+			if err := d.rtcpReader.Close(); err != nil {
+				Logger.Error(err, "Close rtcp reader err")
+			}
+		}
+		if d.receiver != nil {
+			d.receiver.DeleteDownTrack(d.CurrentSpatialLayer(), d.id)
 		}
 		if d.onCloseHandler != nil {
 			d.onCloseHandler()

@@ -123,7 +123,7 @@ func NewPublisher(id string, session Session, cfg *WebRTCTransportConfig) (*Publ
 			fallthrough
 		case webrtc.ICEConnectionStateClosed:
 			Logger.V(1).Info("webrtc ice closed", "peer_id", p.id)
-			p.Close()
+			go p.Close()
 		}
 
 		if handler, ok := p.onICEConnectionStateChangeHandler.Load().(func(webrtc.ICEConnectionState)); ok && handler != nil {
@@ -176,8 +176,10 @@ func (p *Publisher) Close() {
 			p.mu.Unlock()
 		}
 		p.router.Stop()
-		if err := p.pc.Close(); err != nil {
-			Logger.Error(err, "webrtc transport close err")
+		if p.pc != nil {
+			if err := p.pc.GracefulClose(); err != nil {
+				Logger.Error(err, "webrtc transport close err")
+			}
 		}
 	})
 }
@@ -188,6 +190,9 @@ func (p *Publisher) OnPublisherTrack(f func(track PublisherTrack)) {
 
 // OnICECandidate handler
 func (p *Publisher) OnICECandidate(f func(c *webrtc.ICECandidate)) {
+	if p.pc == nil {
+		return
+	}
 	p.pc.OnICECandidate(f)
 }
 
