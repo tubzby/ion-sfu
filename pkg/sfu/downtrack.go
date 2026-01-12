@@ -188,7 +188,9 @@ func (d *DownTrack) Mute(val bool) {
 // Close track
 func (d *DownTrack) Close() {
 	d.closeOnce.Do(func() {
-		Logger.V(1).Info("Closing sender", "peer_id", d.peerID)
+		Logger.V(1).Info("Closing sender",
+			"peer_id", d.peerID,
+		)
 		if d.payload != nil {
 			packetFactory.Put(d.payload)
 		}
@@ -198,7 +200,7 @@ func (d *DownTrack) Close() {
 			}
 		}
 		if d.receiver != nil {
-			d.receiver.DeleteDownTrack(d.CurrentSpatialLayer(), d.id)
+			d.receiver.DeleteDownTrack(d.CurrentSpatialLayer(), d)
 		}
 		if d.onCloseHandler != nil {
 			d.onCloseHandler()

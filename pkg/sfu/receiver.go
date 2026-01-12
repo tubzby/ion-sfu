@@ -29,7 +29,7 @@ type Receiver interface {
 	GetBitrate() [3]uint64
 	GetMaxTemporalLayer() [3]int32
 	RetransmitPackets(track *DownTrack, packets []packetMeta) error
-	DeleteDownTrack(layer int, id string)
+	DeleteDownTrack(layer int, track *DownTrack)
 	OnCloseHandler(fn func())
 	OnExtPktHandler(layer int, fn func(*buffer.ExtPacket))
 	SendRTCP(p []rtcp.Packet)
@@ -246,22 +246,26 @@ func (w *WebRTCReceiver) OnExtPktHandler(layer int, fn func(*buffer.ExtPacket)) 
 }
 
 // DeleteDownTrack removes a DownTrack from a Receiver
-func (w *WebRTCReceiver) DeleteDownTrack(layer int, id string) {
+func (w *WebRTCReceiver) DeleteDownTrack(layer int, track *DownTrack) {
 	if w.closed.get() {
 		return
 	}
 	w.Lock()
-	w.deleteDownTrack(layer, id)
+	w.deleteDownTrack(layer, track)
 	w.Unlock()
 }
 
-func (w *WebRTCReceiver) deleteDownTrack(layer int, id string) {
+func (w *WebRTCReceiver) deleteDownTrack(layer int, track *DownTrack) {
+	if track == nil {
+		return
+	}
 	dts := w.downTracks[layer].Load().([]*DownTrack)
 	ndts := make([]*DownTrack, 0, len(dts))
 	for _, dt := range dts {
-		if dt.id != id {
-			ndts = append(ndts, dt)
+		if dt == track {
+			continue
 		}
+		ndts = append(ndts, dt)
 	}
 	w.downTracks[layer].Store(ndts)
 }
@@ -357,7 +361,7 @@ func (w *WebRTCReceiver) writeRTP(layer int) {
 
 	for {
 		pkt, err := w.buffers[layer].ReadExtended()
-		if err == io.EOF {
+		if err != nil {
 			return
 		}
 
@@ -370,7 +374,7 @@ func (w *WebRTCReceiver) writeRTP(layer int) {
 				if pkt.KeyFrame {
 					w.Lock()
 					for idx, dt := range w.pendingTracks[layer] {
-						w.deleteDownTrack(dt.CurrentSpatialLayer(), dt.id)
+						w.deleteDownTrack(dt.CurrentSpatialLayer(), dt)
 						w.storeDownTrack(layer, dt)
 						dt.SwitchSpatialLayerDone(int32(layer))
 						w.pendingTracks[layer][idx] = nil
@@ -384,14 +388,20 @@ func (w *WebRTCReceiver) writeRTP(layer int) {
 			}
 		}
 
-		for _, dt := range w.downTracks[layer].Load().([]*DownTrack) {
+		downTracks := w.downTracks[layer].Load().([]*DownTrack)
+		for _, dt := range downTracks {
 			if err = dt.WriteRTP(pkt, layer); err != nil {
 				if err == io.EOF || err == io.ErrClosedPipe {
 					w.Lock()
-					w.deleteDownTrack(layer, dt.id)
+					w.deleteDownTrack(layer, dt)
 					w.Unlock()
 				}
-				Logger.Error(err, "Error writing to down track", "id", dt.id)
+				Logger.Error(err, "Error writing to down track",
+					"id", dt.id,
+					"peer_id", w.peerID,
+					"stream_id", w.streamID,
+					"layer", layer,
+				)
 			}
 		}
 		if w.onExtPktHandler[layer] != nil {
