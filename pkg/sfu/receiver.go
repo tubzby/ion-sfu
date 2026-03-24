@@ -63,7 +63,11 @@ type WebRTCReceiver struct {
 	nackWorker      *workerpool.WorkerPool
 	isSimulcast     bool
 	onCloseHandler  func()
-	onExtPktHandler [3]func(*buffer.ExtPacket)
+	onExtPktHandler [3]atomic.Pointer[extPacketHandler]
+}
+
+type extPacketHandler struct {
+	fn func(*buffer.ExtPacket)
 }
 
 // NewWebRTCReceiver creates a new webrtc track receivers
@@ -242,7 +246,11 @@ func (w *WebRTCReceiver) OnCloseHandler(fn func()) {
 
 // OnExtPktHandler method to be called on each rtp packet
 func (w *WebRTCReceiver) OnExtPktHandler(layer int, fn func(*buffer.ExtPacket)) {
-	w.onExtPktHandler[layer] = fn
+	if fn == nil {
+		w.onExtPktHandler[layer].Store(nil)
+		return
+	}
+	w.onExtPktHandler[layer].Store(&extPacketHandler{fn: fn})
 }
 
 // DeleteDownTrack removes a DownTrack from a Receiver
@@ -404,8 +412,8 @@ func (w *WebRTCReceiver) writeRTP(layer int) {
 				)
 			}
 		}
-		if w.onExtPktHandler[layer] != nil {
-			w.onExtPktHandler[layer](pkt)
+		if handler := w.onExtPktHandler[layer].Load(); handler != nil && handler.fn != nil {
+			handler.fn(pkt)
 		}
 	}
 
